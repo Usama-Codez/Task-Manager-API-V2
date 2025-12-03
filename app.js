@@ -22,11 +22,13 @@ const swaggerUiSetup = swaggerUi.setup(swaggerSpec, {
   },
 });
 
-app.use("/api-docs", swaggerUiServe);
-app.get("/api-docs", swaggerUiSetup);
-
-// Root route
+// Root route - Redirect to Swagger UI
 app.get("/", (req, res) => {
+  res.redirect("/api-docs");
+});
+
+// API info endpoint
+app.get("/info", (req, res) => {
   res.json({
     success: true,
     message: "Welcome to Task Manager API",
@@ -37,6 +39,10 @@ app.get("/", (req, res) => {
     },
   });
 });
+
+// Swagger UI
+app.use("/api-docs", swaggerUiServe);
+app.get("/api-docs", swaggerUiSetup);
 
 // API Routes
 app.use("/api/tasks", taskRoutes);
