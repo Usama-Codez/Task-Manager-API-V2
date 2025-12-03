@@ -1,5 +1,4 @@
 const express = require("express");
-const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
 const taskRoutes = require("./routes/taskRoutes");
 const statsRoutes = require("./routes/statsRoutes");
@@ -13,13 +12,55 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Swagger Documentation
-const swaggerUiServe = swaggerUi.serve;
-const swaggerUiSetup = swaggerUi.setup(swaggerSpec, {
-  customCss: ".swagger-ui .topbar { display: none }",
-  customSiteTitle: "Task Manager API Docs",
-  swaggerOptions: {
-    persistAuthorization: true,
-  },
+// Serve swagger spec as JSON
+app.get("/swagger.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
+});
+
+// Custom Swagger UI HTML (using CDN for assets)
+app.get("/api-docs", (req, res) => {
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager API Docs</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui.css" />
+  <style>
+    html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+    *, *:before, *:after { box-sizing: inherit; }
+    body { margin: 0; padding: 0; }
+    .swagger-ui .topbar { display: none; }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        url: "/swagger.json",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout",
+        persistAuthorization: true
+      });
+    };
+  </script>
+</body>
+</html>
+  `;
+  res.send(html);
 });
 
 // Root route - Redirect to Swagger UI
@@ -39,10 +80,6 @@ app.get("/info", (req, res) => {
     },
   });
 });
-
-// Swagger UI
-app.use("/api-docs", swaggerUiServe);
-app.get("/api-docs", swaggerUiSetup);
 
 // API Routes
 app.use("/api/tasks", taskRoutes);
