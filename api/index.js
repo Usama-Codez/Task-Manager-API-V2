@@ -1,6 +1,4 @@
 const app = require("../app");
 
-// Vercel requires a handler function, not the app directly
-module.exports = (req, res) => {
-  return app(req, res);
-};
+// Export the Express app as the default handler for Vercel
+module.exports = app;

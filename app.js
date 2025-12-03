@@ -19,6 +19,9 @@ app.use(
   swaggerUi.setup(swaggerSpec, {
     customCss: ".swagger-ui .topbar { display: none }",
     customSiteTitle: "Task Manager API Docs",
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
   })
 );
 
