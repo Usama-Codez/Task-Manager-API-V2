@@ -108,6 +108,15 @@ app.use("/api/users", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api", statsRoutes); // /api/stats
 
+// Debug endpoint to check environment variables (for troubleshooting)
+app.get("/debug-env", (req, res) => {
+  res.json({
+    mongoUriDefined: !!process.env.MONGODB_URI,
+    mongoUriPrefix: process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 20) : "undefined",
+    nodeEnv: process.env.NODE_ENV,
+  });
+});
+
 // 404 Handler
 app.use((req, res) => {
   res.status(404).json({

@@ -7,8 +7,11 @@ module.exports = async (req, res) => {
     // Debug: Log MONGODB_URI (first 20 chars only for security)
     const mongoUri = process.env.MONGODB_URI;
     console.log("MONGODB_URI exists:", !!mongoUri);
-    console.log("MONGODB_URI starts with:", mongoUri ? mongoUri.substring(0, 20) : "undefined");
-    
+    console.log(
+      "MONGODB_URI starts with:",
+      mongoUri ? mongoUri.substring(0, 20) : "undefined"
+    );
+
     // Connect to MongoDB (uses cached connection if available)
     await connectDB();
 
