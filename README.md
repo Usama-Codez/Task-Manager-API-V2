@@ -1,90 +1,176 @@
-# 📝 Task Manager API
+# 📝 Task Manager API v2
 
-A RESTful API for managing tasks with in-memory storage. Built with Node.js, Express.js, and documented with Swagger UI.
+A production-ready RESTful API for managing tasks with **MongoDB** database, **JWT authentication**, **express-validator** for input validation, and comprehensive **Swagger documentation**. Built with Node.js and Express.js.
 
-## 🚀 Features
+🌐 **[Live Demo](#)** | 📚 **[API Documentation](#)**
 
-- ✅ Full CRUD operations for tasks
-- ✅ In-memory data storage (no database required)
-- ✅ UUID-based task identifiers
-- ✅ Request validation middleware
-- ✅ Consistent response structure
-- ✅ Error handling middleware
-- ✅ Search tasks by title
-- ✅ Task statistics endpoint
-- ✅ Complete Swagger API documentation
-- ✅ Modular architecture (routes, controllers, middlewares)
+---
 
-## 📋 Table of Contents
+## 🚀 What's New in v2
 
-- [Installation](#installation)
-- [Running the Project](#running-the-project)
-- [API Endpoints](#api-endpoints)
-- [Request & Response Examples](#request--response-examples)
-- [Project Structure](#project-structure)
-- [Testing with Postman](#testing-with-postman)
-- [Technologies Used](#technologies-used)
+- ✅ **MongoDB Integration** - Persistent data storage with Mongoose ODM
+- ✅ **JWT Authentication** - Secure user registration and login
+- ✅ **Protected Routes** - Users can only access their own tasks
+- ✅ **Express Validator** - Comprehensive input validation
+- ✅ **Password Hashing** - Secure password storage with bcryptjs
+- ✅ **User-specific Tasks** - Each user has their own task collection
+- ✅ **Enhanced Swagger Docs** - Complete API documentation with authentication
 
-## 🔧 Installation
+---
 
-1. **Clone the repository:**
+## 📋 Features
+
+### Authentication
+
+- 🔐 User registration with validation
+- 🔑 Secure login with JWT token generation
+- 👤 Get current user profile
+- 🛡️ Password encryption with bcryptjs
+
+### Task Management
+
+- ✅ Create, read, update, and delete tasks
+- 🔒 User-specific task isolation
+- 🔍 Search tasks by title
+- ✔️ Filter tasks by completion status
+- 📊 Task statistics (total, completed, pending)
+
+### Security & Validation
+
+- 🔐 JWT-based route protection
+- ✔️ Request validation with express-validator
+- 🔒 Password hashing
+- 🚫 Authorization checks (users can only access their own data)
+
+---
+
+## 🛠️ Tech Stack
+
+| Technology            | Purpose               |
+| --------------------- | --------------------- |
+| **Node.js**           | Runtime environment   |
+| **Express.js**        | Web framework         |
+| **MongoDB**           | Database              |
+| **Mongoose**          | MongoDB ODM           |
+| **JWT**               | Authentication tokens |
+| **bcryptjs**          | Password hashing      |
+| **express-validator** | Input validation      |
+| **Swagger**           | API documentation     |
+| **dotenv**            | Environment variables |
+
+---
+
+## 📦 Installation
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- MongoDB (local or MongoDB Atlas)
+- npm or yarn
+
+### Steps
+
+1. **Clone the repository**
 
    ```bash
-   git clone <repository-url>
-   cd Task-Manager-API
+   git clone https://github.com/yourusername/task-manager-api-v2.git
+   cd task-manager-api-v2
    ```
 
-2. **Install dependencies:**
+2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
-## ▶️ Running the Project
+3. **Setup environment variables**
 
-### Development Mode (with auto-reload):
+   Create a `.env` file in the root directory:
 
-```bash
-npm run dev
-```
+   ```env
+   PORT=3000
+   NODE_ENV=development
 
-### Production Mode:
+   # MongoDB Configuration
+   MONGODB_URI=mongodb://localhost:27017/taskmanager
+   # For MongoDB Atlas: mongodb+srv://<username>:<password>@cluster.mongodb.net/taskmanager
 
-```bash
-npm start
-```
+   # JWT Configuration
+   JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+   JWT_EXPIRE=7d
+   ```
 
-The server will start on `http://localhost:3000`
+4. **Start MongoDB** (if running locally)
 
-### Access Swagger Documentation:
+   ```bash
+   mongod
+   ```
 
-Open your browser and visit: `http://localhost:3000/api-docs`
+5. **Run the application**
+
+   Development mode (with nodemon):
+
+   ```bash
+   npm run dev
+   ```
+
+   Production mode:
+
+   ```bash
+   npm start
+   ```
+
+6. **Access the API**
+   - API: `http://localhost:3000`
+   - Swagger Docs: `http://localhost:3000/api-docs`
+
+---
 
 ## 🌐 API Endpoints
 
-| Method | Endpoint         | Description                           |
-| ------ | ---------------- | ------------------------------------- |
-| GET    | `/api/tasks`     | Get all tasks (supports title search) |
-| GET    | `/api/tasks/:id` | Get a specific task by ID             |
-| POST   | `/api/tasks`     | Create a new task                     |
-| PUT    | `/api/tasks/:id` | Update an existing task               |
-| DELETE | `/api/tasks/:id` | Delete a task                         |
-| GET    | `/api/stats`     | Get task statistics                   |
+### Authentication Endpoints
+
+| Method | Endpoint              | Description              | Auth Required |
+| ------ | --------------------- | ------------------------ | ------------- |
+| POST   | `/api/users/register` | Register a new user      | ❌            |
+| POST   | `/api/users/login`    | Login user               | ❌            |
+| GET    | `/api/users/me`       | Get current user profile | ✅            |
+
+### Task Endpoints
+
+| Method | Endpoint         | Description         | Auth Required |
+| ------ | ---------------- | ------------------- | ------------- |
+| GET    | `/api/tasks`     | Get all user tasks  | ✅            |
+| GET    | `/api/tasks/:id` | Get specific task   | ✅            |
+| POST   | `/api/tasks`     | Create new task     | ✅            |
+| PUT    | `/api/tasks/:id` | Update task         | ✅            |
+| DELETE | `/api/tasks/:id` | Delete task         | ✅            |
+| GET    | `/api/stats`     | Get task statistics | ✅            |
 
 ### Query Parameters
 
 **GET /api/tasks**
 
-- `title` (optional): Filter tasks by title (case-insensitive)
-  - Example: `/api/tasks?title=learn`
+- `title` (string): Filter by title (case-insensitive)
+- `completed` (boolean): Filter by completion status
 
-## 📤 Request & Response Examples
+Example: `/api/tasks?title=learn&completed=false`
 
-### 1. Get All Tasks
+---
 
-**Request:**
+## 📤 API Usage Examples
 
-```http
-GET /api/tasks
+### 1. Register a New User
+
+```bash
+POST /api/users/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123"
+}
 ```
 
 **Response:**
@@ -92,180 +178,133 @@ GET /api/tasks
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": "123e4567-e89b-12d3-a456-426614174000",
-      "title": "Learn Express",
-      "completed": false
+  "data": {
+    "user": {
+      "id": "507f1f77bcf86cd799439011",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "createdAt": "2025-12-04T10:30:00.000Z"
     },
-    {
-      "id": "987e6543-e21b-12d3-a456-426614174001",
-      "title": "Build REST API",
-      "completed": true
-    }
-  ],
-  "message": "Tasks retrieved successfully"
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "message": "User registered successfully"
 }
 ```
 
-### 2. Get Task by ID
+### 2. Login
 
-**Request:**
+```bash
+POST /api/users/login
+Content-Type: application/json
 
-```http
-GET /api/tasks/123e4567-e89b-12d3-a456-426614174000
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
 ```
 
-**Response (Success - 200):**
+**Response:**
 
 ```json
 {
   "success": true,
   "data": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "title": "Learn Express",
-    "completed": false
+    "user": {
+      "id": "507f1f77bcf86cd799439011",
+      "name": "John Doe",
+      "email": "john@example.com"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   },
-  "message": "Task retrieved successfully"
+  "message": "Login successful"
 }
 ```
 
-**Response (Not Found - 404):**
+### 3. Create a Task (Protected Route)
 
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Task not found"
-}
-```
-
-### 3. Create a New Task
-
-**Request:**
-
-```http
+```bash
 POST /api/tasks
 Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
 
 {
-  "title": "Learn Swagger",
+  "title": "Learn MongoDB",
   "completed": false
 }
 ```
 
-**Response (201):**
+**Response:**
 
 ```json
 {
   "success": true,
   "data": {
-    "id": "456e7890-e12b-12d3-a456-426614174002",
-    "title": "Learn Swagger",
-    "completed": false
+    "_id": "507f191e810c19729de860ea",
+    "title": "Learn MongoDB",
+    "completed": false,
+    "user": "507f1f77bcf86cd799439011",
+    "createdAt": "2025-12-04T10:35:00.000Z",
+    "updatedAt": "2025-12-04T10:35:00.000Z"
   },
   "message": "Task created successfully"
 }
 ```
 
-**Validation Error (400):**
+### 4. Get All Tasks (Protected Route)
 
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Title is required"
-}
+```bash
+GET /api/tasks
+Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
-### 4. Update a Task
-
-**Request:**
-
-```http
-PUT /api/tasks/123e4567-e89b-12d3-a456-426614174000
-Content-Type: application/json
-
-{
-  "title": "Master Express.js",
-  "completed": true
-}
-```
-
-**Response (200):**
+**Response:**
 
 ```json
 {
   "success": true,
-  "data": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "title": "Master Express.js",
-    "completed": true
-  },
-  "message": "Task updated successfully"
-}
-```
-
-### 5. Delete a Task
-
-**Request:**
-
-```http
-DELETE /api/tasks/123e4567-e89b-12d3-a456-426614174000
-```
-
-**Response (200):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "title": "Learn Express",
-    "completed": false
-  },
-  "message": "Task deleted successfully"
-}
-```
-
-### 6. Search Tasks by Title
-
-**Request:**
-
-```http
-GET /api/tasks?title=learn
-```
-
-**Response (200):**
-
-```json
-{
-  "success": true,
+  "count": 2,
   "data": [
     {
-      "id": "123e4567-e89b-12d3-a456-426614174000",
-      "title": "Learn Express",
-      "completed": false
-    },
-    {
-      "id": "456e7890-e12b-12d3-a456-426614174002",
-      "title": "Learn Swagger",
-      "completed": false
+      "_id": "507f191e810c19729de860ea",
+      "title": "Learn MongoDB",
+      "completed": false,
+      "user": "507f1f77bcf86cd799439011",
+      "createdAt": "2025-12-04T10:35:00.000Z",
+      "updatedAt": "2025-12-04T10:35:00.000Z"
     }
   ],
   "message": "Tasks retrieved successfully"
 }
 ```
 
-### 7. Get Task Statistics
+### 5. Update a Task
 
-**Request:**
+```bash
+PUT /api/tasks/507f191e810c19729de860ea
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
 
-```http
-GET /api/stats
+{
+  "title": "Master MongoDB",
+  "completed": true
+}
 ```
 
-**Response (200):**
+### 6. Delete a Task
+
+```bash
+DELETE /api/tasks/507f191e810c19729de860ea
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### 7. Get Task Statistics
+
+```bash
+GET /api/stats
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+**Response:**
 
 ```json
 {
@@ -279,120 +318,230 @@ GET /api/stats
 }
 ```
 
-## 📁 Project Structure
-
-```
-Task-Manager-API/
-├── controllers/
-│   └── taskController.js       # Business logic for tasks
-├── middlewares/
-│   ├── errorHandler.js         # Global error handling
-│   └── validateTask.js         # Request validation
-├── routes/
-│   └── taskRoutes.js           # API routes with Swagger docs
-├── app.js                      # Main Express application
-├── swagger.js                  # Swagger configuration
-├── package.json                # Dependencies and scripts
-├── .gitignore                  # Git ignore file
-└── README.md                   # This file
-```
+---
 
 ## 🧪 Testing with Postman
 
-1. **Import the Collection:**
+1. **Import Collection**
 
-   - Download the `Task-Manager-API.postman_collection.json` file
-   - Open Postman
-   - Click **Import** → Select the JSON file
+   - Use the provided `Task-Manager-API.postman_collection.json`
+   - Or create requests manually using the examples above
 
-2. **Test Each Endpoint:**
+2. **Authentication Flow**
 
-   - The collection includes all endpoints with sample requests
-   - Test them in order: GET → POST → PUT → DELETE
+   - Register a new user or login
+   - Copy the JWT token from the response
+   - Add to Authorization header: `Bearer YOUR_TOKEN`
 
-3. **Environment Variables (Optional):**
-   - Create a Postman environment
-   - Add variable: `base_url` = `http://localhost:3000`
-   - Use `{{base_url}}` in your requests
+3. **Environment Variables** (optional)
+   - Create variables for `base_url` and `token`
+   - Use `{{base_url}}` and `{{token}}` in requests
 
-## 🛠️ Technologies Used
+---
 
-- **Node.js** - JavaScript runtime
-- **Express.js** - Web framework
-- **Swagger UI Express** - API documentation
-- **Swagger JSDoc** - Generate Swagger specs from JSDoc comments
-- **UUID** - Generate unique identifiers
-- **Nodemon** - Development auto-reload
+## 📁 Project Structure
 
-## ✅ Validation Rules
+```
+Task-Manager-API-v2/
+├── api/
+│   └── index.js                 # Vercel serverless entry point
+├── config/
+│   └── db.js                    # MongoDB connection
+├── controllers/
+│   ├── authController.js        # Auth logic (register, login)
+│   └── taskController.js        # Task CRUD operations
+├── middlewares/
+│   ├── auth.js                  # JWT authentication middleware
+│   ├── errorHandler.js          # Global error handler
+│   ├── validateRequest.js       # Express-validator middleware
+│   └── validateTask.js          # Legacy task validation
+├── models/
+│   ├── Task.js                  # Mongoose Task schema
+│   └── User.js                  # Mongoose User schema
+├── routes/
+│   ├── authRoutes.js            # Authentication routes
+│   ├── statsRoutes.js           # Statistics routes
+│   └── taskRoutes.js            # Task CRUD routes
+├── .env                         # Environment variables
+├── .env.example                 # Environment template
+├── .gitignore                   # Git ignore rules
+├── app.js                       # Express app configuration
+├── package.json                 # Dependencies and scripts
+├── swagger.js                   # Swagger configuration
+└── README.md                    # Documentation
+```
 
-### Creating a Task (POST)
+---
 
-- `title`: Required, must be a non-empty string
-- `completed`: Optional, must be a boolean (defaults to `false`)
+## 🔒 Security Features
 
-### Updating a Task (PUT)
+1. **Password Security**
 
-- At least one field (`title` or `completed`) must be provided
-- `title`: If provided, must be a non-empty string
-- `completed`: If provided, must be a boolean
+   - Passwords hashed using bcryptjs (10 rounds)
+   - Never stored or returned in plain text
 
-## 📊 Response Structure
+2. **JWT Authentication**
 
-All responses follow this consistent structure:
+   - Tokens expire after 7 days (configurable)
+   - Secure token verification on protected routes
+
+3. **Data Isolation**
+
+   - Users can only access their own tasks
+   - Authorization checks on all task operations
+
+4. **Input Validation**
+   - All inputs validated using express-validator
+   - Proper error messages for invalid data
+
+---
+
+## 🌍 Deployment
+
+### Deploying to Render
+
+1. **Create a new Web Service**
+
+   - Connect your GitHub repository
+   - Select Node.js environment
+
+2. **Configure Environment**
+
+   - Add environment variables from `.env`
+   - Set `MONGODB_URI` to your MongoDB Atlas connection string
+
+3. **Build Settings**
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+
+### Deploying to Vercel
+
+1. **Install Vercel CLI**
+
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Deploy**
+
+   ```bash
+   vercel
+   ```
+
+3. **Add Environment Variables**
+   - Go to Vercel Dashboard → Settings → Environment Variables
+   - Add all variables from `.env`
+
+### MongoDB Atlas Setup
+
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a new cluster
+3. Create database user and get connection string
+4. Update `MONGODB_URI` in environment variables
+
+---
+
+## 📚 API Documentation
+
+Once the server is running, visit **`http://localhost:3000/api-docs`** to access the interactive Swagger documentation.
+
+Features:
+
+- 🎯 Try out API endpoints directly
+- 📖 View request/response schemas
+- 🔐 Test authentication with JWT tokens
+- 💡 See example requests and responses
+
+---
+
+## 🧪 Validation Rules
+
+### User Registration
+
+- `name`: 2-50 characters, required
+- `email`: Valid email format, required, unique
+- `password`: Minimum 6 characters, required
+
+### User Login
+
+- `email`: Valid email format, required
+- `password`: Required
+
+### Task Creation
+
+- `title`: 1-200 characters, required
+- `completed`: Boolean, optional (defaults to false)
+
+### Task Update
+
+- `title`: 1-200 characters, optional
+- `completed`: Boolean, optional
+- At least one field must be provided
+
+---
+
+## 🐛 Error Handling
+
+The API returns consistent error responses:
 
 ```json
 {
-  "success": true/false,
-  "data": { ... } or null,
-  "message": "Descriptive message"
+  "success": false,
+  "data": null,
+  "message": "Error description",
+  "errors": [] // Array of validation errors (if applicable)
 }
 ```
 
-## 🔍 HTTP Status Codes
+### Common HTTP Status Codes
 
-- `200` - OK (successful GET, PUT, DELETE)
-- `201` - Created (successful POST)
+- `200` - Success
+- `201` - Created
 - `400` - Bad Request (validation error)
-- `404` - Not Found (resource doesn't exist)
+- `401` - Unauthorized (not authenticated)
+- `403` - Forbidden (not authorized)
+- `404` - Not Found
 - `500` - Internal Server Error
 
-## 🎯 Stretch Goals Implemented
+---
 
-- ✅ UUID instead of numeric IDs
-- ✅ Express Router for modular routes
-- ✅ Organized folder structure (routes/, controllers/, middlewares/)
-- ✅ Search functionality (GET /api/tasks?title=search)
-- ✅ Statistics endpoint (GET /api/stats)
+## 📖 Learning Resources
 
-## 🆔 Sample Task IDs for Testing
+- [MongoDB Documentation](https://docs.mongodb.com/)
+- [Mongoose Guide](https://mongoosejs.com/docs/guide.html)
+- [JWT.io](https://jwt.io/)
+- [Express Validator](https://express-validator.github.io/docs/)
+- [Swagger/OpenAPI](https://swagger.io/docs/)
 
-The API comes pre-loaded with 2 sample tasks that have **fixed UUIDs**:
+---
 
-**Task 1:**
+## 🤝 Contributing
 
-- ID: `a1b2c3d4-e5f6-7890-abcd-ef1234567890`
-- Title: "Learn Express"
-- Completed: false
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-**Task 2:**
-
-- ID: `b2c3d4e5-f6a7-8901-bcde-f12345678901`
-- Title: "Build REST API"
-- Completed: false
-
-You can use these IDs directly in Postman or cURL to test GET, PUT, and DELETE operations.
-
-## 📝 Notes
-
-- This API uses **in-memory storage**, so all data will be lost when the server restarts
-- Two sample tasks with fixed IDs are pre-loaded for testing
-- The API is fully documented with Swagger at `/api-docs`
-
-## 👨‍💻 Author
-
-[Usama Akram](https://usamaakram.netlify.app)
+---
 
 ## 📄 License
 
-ISC
+This project is licensed under the ISC License.
+
+---
+
+## 👨‍💻 Author
+
+**Your Name**
+
+- GitHub: [@yourusername](https://github.com/yourusername)
+- Email: your.email@example.com
+
+---
+
+## 🙏 Acknowledgments
+
+- Express.js team for the amazing framework
+- MongoDB team for the powerful database
+- All open-source contributors
+
+---
+
+**Made with ❤️ using Node.js, Express.js, MongoDB, and JWT**

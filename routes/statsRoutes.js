@@ -1,14 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const { getTaskStats } = require("../controllers/taskController");
+const { protect } = require("../middlewares/auth");
 
 /**
  * @swagger
  * /api/stats:
  *   get:
- *     summary: Get task statistics
- *     description: Retrieve statistics about total, completed, and pending tasks
+ *     summary: Get task statistics for authenticated user
+ *     description: Retrieve statistics about total, completed, and pending tasks for logged in user
  *     tags: [Statistics]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Statistics retrieved successfully
@@ -35,14 +38,13 @@ const { getTaskStats } = require("../controllers/taskController");
  *                 message:
  *                   type: string
  *                   example: "Statistics retrieved successfully"
- *             example:
- *               success: true
- *               data:
- *                 totalTasks: 10
- *                 completedTasks: 6
- *                 pendingTasks: 4
- *               message: "Statistics retrieved successfully"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/stats", getTaskStats);
+router.get("/stats", protect, getTaskStats);
 
 module.exports = router;

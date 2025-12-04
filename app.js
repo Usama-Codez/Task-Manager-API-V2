@@ -1,11 +1,17 @@
+require("dotenv").config();
 const express = require("express");
+const connectDB = require("./config/db");
 const swaggerSpec = require("./swagger");
 const taskRoutes = require("./routes/taskRoutes");
 const statsRoutes = require("./routes/statsRoutes");
+const authRoutes = require("./routes/authRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Connect to MongoDB
+connectDB();
 
 // Middleware
 app.use(express.json());
@@ -72,16 +78,36 @@ app.get("/", (req, res) => {
 app.get("/info", (req, res) => {
   res.json({
     success: true,
-    message: "Welcome to Task Manager API",
+    message: "Welcome to Task Manager API v2",
+    version: "2.0.0",
+    features: [
+      "MongoDB Database Integration",
+      "JWT Authentication",
+      "Express Validator",
+      "Protected Routes",
+      "Swagger Documentation",
+    ],
     documentation: "/api-docs",
     endpoints: {
-      tasks: "/api/tasks",
-      stats: "/api/stats",
+      auth: {
+        register: "POST /api/users/register",
+        login: "POST /api/users/login",
+        profile: "GET /api/users/me",
+      },
+      tasks: {
+        getAll: "GET /api/tasks",
+        getById: "GET /api/tasks/:id",
+        create: "POST /api/tasks",
+        update: "PUT /api/tasks/:id",
+        delete: "DELETE /api/tasks/:id",
+      },
+      stats: "GET /api/stats",
     },
   });
 });
 
 // API Routes
+app.use("/api/users", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api", statsRoutes); // /api/stats
 

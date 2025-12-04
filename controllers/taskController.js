@@ -1,40 +1,35 @@
-const { v4: uuidv4 } = require("uuid");
-
-// In-memory storage for tasks with fixed IDs for testing
-let tasks = [
-  {
-    id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    title: "Learn Express",
-    completed: false,
-  },
-  {
-    id: "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-    title: "Build REST API",
-    completed: false,
-  },
-];
+const Task = require("../models/Task");
 
 /**
- * Get all tasks or filter by title
- * @route GET /api/tasks
- * @query {string} title - Optional: Filter tasks by title (case-insensitive)
+ * @desc    Get all tasks for logged in user
+ * @route   GET /api/tasks
+ * @query   {string} title - Optional: Filter tasks by title (case-insensitive)
+ * @query   {boolean} completed - Optional: Filter by completion status
+ * @access  Private
  */
-const getAllTasks = (req, res) => {
+const getAllTasks = async (req, res) => {
   try {
-    const { title } = req.query;
+    const { title, completed } = req.query;
 
-    let filteredTasks = tasks;
+    // Build query object
+    const query = { user: req.user.id };
 
-    // Filter by title if query parameter is provided
+    // Filter by title if provided
     if (title) {
-      filteredTasks = tasks.filter((task) =>
-        task.title.toLowerCase().includes(title.toLowerCase())
-      );
+      query.title = { $regex: title, $options: "i" }; // Case-insensitive search
     }
+
+    // Filter by completion status if provided
+    if (completed !== undefined) {
+      query.completed = completed === "true";
+    }
+
+    const tasks = await Task.find(query).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
-      data: filteredTasks,
+      count: tasks.length,
+      data: tasks,
       message: "Tasks retrieved successfully",
     });
   } catch (error) {
@@ -47,13 +42,13 @@ const getAllTasks = (req, res) => {
 };
 
 /**
- * Get a single task by ID
- * @route GET /api/tasks/:id
+ * @desc    Get a single task by ID
+ * @route   GET /api/tasks/:id
+ * @access  Private
  */
-const getTaskById = (req, res) => {
+const getTaskById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const task = tasks.find((t) => t.id === id);
+    const task = await Task.findById(req.params.id);
 
     if (!task) {
       return res.status(404).json({
@@ -63,12 +58,30 @@ const getTaskById = (req, res) => {
       });
     }
 
+    // Make sure user owns this task
+    if (task.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        data: null,
+        message: "Not authorized to access this task",
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: task,
       message: "Task retrieved successfully",
     });
   } catch (error) {
+    // Handle invalid MongoDB ID format
+    if (error.kind === "ObjectId") {
+      return res.status(404).json({
+        success: false,
+        data: null,
+        message: "Task not found",
+      });
+    }
+
     res.status(500).json({
       success: false,
       data: null,
@@ -78,26 +91,25 @@ const getTaskById = (req, res) => {
 };
 
 /**
- * Create a new task
- * @route POST /api/tasks
- * @body {string} title - Task title (required)
- * @body {boolean} completed - Task completion status (optional, defaults to false)
+ * @desc    Create a new task
+ * @route   POST /api/tasks
+ * @body    {string} title - Task title (required)
+ * @body    {boolean} completed - Task completion status (optional, defaults to false)
+ * @access  Private
  */
-const createTask = (req, res) => {
+const createTask = async (req, res) => {
   try {
-    const { title, completed = false } = req.body;
+    const { title, completed } = req.body;
 
-    const newTask = {
-      id: uuidv4(),
-      title: title.trim(),
-      completed,
-    };
-
-    tasks.push(newTask);
+    const task = await Task.create({
+      title,
+      completed: completed || false,
+      user: req.user.id,
+    });
 
     res.status(201).json({
       success: true,
-      data: newTask,
+      data: task,
       message: "Task created successfully",
     });
   } catch (error) {
@@ -110,19 +122,17 @@ const createTask = (req, res) => {
 };
 
 /**
- * Update an existing task
- * @route PUT /api/tasks/:id
- * @body {string} title - Task title (optional)
- * @body {boolean} completed - Task completion status (optional)
+ * @desc    Update an existing task
+ * @route   PUT /api/tasks/:id
+ * @body    {string} title - Task title (optional)
+ * @body    {boolean} completed - Task completion status (optional)
+ * @access  Private
  */
-const updateTask = (req, res) => {
+const updateTask = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { title, completed } = req.body;
+    let task = await Task.findById(req.params.id);
 
-    const taskIndex = tasks.findIndex((t) => t.id === id);
-
-    if (taskIndex === -1) {
+    if (!task) {
       return res.status(404).json({
         success: false,
         data: null,
@@ -130,38 +140,32 @@ const updateTask = (req, res) => {
       });
     }
 
-    // Update only provided fields
-    if (title !== undefined) {
-      tasks[taskIndex].title = title.trim();
+    // Make sure user owns this task
+    if (task.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        data: null,
+        message: "Not authorized to update this task",
+      });
     }
-    if (completed !== undefined) {
-      tasks[taskIndex].completed = completed;
-    }
+
+    const { title, completed } = req.body;
+
+    // Update task
+    task = await Task.findByIdAndUpdate(
+      req.params.id,
+      { title, completed },
+      { new: true, runValidators: true }
+    );
 
     res.status(200).json({
       success: true,
-      data: tasks[taskIndex],
+      data: task,
       message: "Task updated successfully",
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: error.message,
-    });
-  }
-};
-
-/**
- * Delete a task
- * @route DELETE /api/tasks/:id
- */
-const deleteTask = (req, res) => {
-  try {
-    const { id } = req.params;
-    const taskIndex = tasks.findIndex((t) => t.id === id);
-
-    if (taskIndex === -1) {
+    // Handle invalid MongoDB ID format
+    if (error.kind === "ObjectId") {
       return res.status(404).json({
         success: false,
         data: null,
@@ -169,14 +173,6 @@ const deleteTask = (req, res) => {
       });
     }
 
-    const deletedTask = tasks.splice(taskIndex, 1)[0];
-
-    res.status(200).json({
-      success: true,
-      data: deletedTask,
-      message: "Task deleted successfully",
-    });
-  } catch (error) {
     res.status(500).json({
       success: false,
       data: null,
@@ -186,13 +182,68 @@ const deleteTask = (req, res) => {
 };
 
 /**
- * Get task statistics
- * @route GET /api/stats
+ * @desc    Delete a task
+ * @route   DELETE /api/tasks/:id
+ * @access  Private
  */
-const getTaskStats = (req, res) => {
+const deleteTask = async (req, res) => {
   try {
-    const totalTasks = tasks.length;
-    const completedTasks = tasks.filter((t) => t.completed).length;
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        data: null,
+        message: "Task not found",
+      });
+    }
+
+    // Make sure user owns this task
+    if (task.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        data: null,
+        message: "Not authorized to delete this task",
+      });
+    }
+
+    await Task.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      data: task,
+      message: "Task deleted successfully",
+    });
+  } catch (error) {
+    // Handle invalid MongoDB ID format
+    if (error.kind === "ObjectId") {
+      return res.status(404).json({
+        success: false,
+        data: null,
+        message: "Task not found",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      data: null,
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get task statistics for logged in user
+ * @route   GET /api/stats
+ * @access  Private
+ */
+const getTaskStats = async (req, res) => {
+  try {
+    const totalTasks = await Task.countDocuments({ user: req.user.id });
+    const completedTasks = await Task.countDocuments({
+      user: req.user.id,
+      completed: true,
+    });
     const pendingTasks = totalTasks - completedTasks;
 
     res.status(200).json({

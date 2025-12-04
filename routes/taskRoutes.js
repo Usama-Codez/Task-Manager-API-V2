@@ -6,12 +6,12 @@ const {
   createTask,
   updateTask,
   deleteTask,
-  getTaskStats,
 } = require("../controllers/taskController");
 const {
-  validateTask,
-  validateTaskUpdate,
-} = require("../middlewares/validateTask");
+  validateCreateTask,
+  validateUpdateTask,
+} = require("../middlewares/validateRequest");
+const { protect } = require("../middlewares/auth");
 
 /**
  * @swagger
@@ -21,11 +21,12 @@ const {
  *       type: object
  *       required:
  *         - title
+ *         - user
  *       properties:
- *         id:
+ *         _id:
  *           type: string
- *           description: Auto-generated UUID for the task
- *           example: "123e4567-e89b-12d3-a456-426614174000"
+ *           description: Auto-generated MongoDB ObjectId
+ *           example: "507f1f77bcf86cd799439011"
  *         title:
  *           type: string
  *           description: The title of the task
@@ -34,6 +35,18 @@ const {
  *           type: boolean
  *           description: Whether the task is completed
  *           example: false
+ *         user:
+ *           type: string
+ *           description: MongoDB ObjectId of the user who owns this task
+ *           example: "507f191e810c19729de860ea"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Task creation timestamp
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Task last update timestamp
  *     SuccessResponse:
  *       type: object
  *       properties:
@@ -75,9 +88,11 @@ const {
  * @swagger
  * /api/tasks:
  *   get:
- *     summary: Get all tasks
- *     description: Retrieve all tasks or filter by title
+ *     summary: Get all tasks for authenticated user
+ *     description: Retrieve all tasks owned by the authenticated user with optional filters
  *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: title
@@ -85,6 +100,12 @@ const {
  *           type: string
  *         description: Filter tasks by title (case-insensitive)
  *         example: "learn"
+ *       - in: query
+ *         name: completed
+ *         schema:
+ *           type: boolean
+ *         description: Filter tasks by completion status
+ *         example: false
  *     responses:
  *       200:
  *         description: Tasks retrieved successfully
@@ -96,6 +117,9 @@ const {
  *                 success:
  *                   type: boolean
  *                   example: true
+ *                 count:
+ *                   type: integer
+ *                   example: 2
  *                 data:
  *                   type: array
  *                   items:
@@ -103,67 +127,32 @@ const {
  *                 message:
  *                   type: string
  *                   example: "Tasks retrieved successfully"
- *             example:
- *               success: true
- *               data:
- *                 - id: "123e4567-e89b-12d3-a456-426614174000"
- *                   title: "Learn Express"
- *                   completed: false
- *                 - id: "987e6543-e21b-12d3-a456-426614174001"
- *                   title: "Build REST API"
- *                   completed: true
- *               message: "Tasks retrieved successfully"
- */
-router.get("/", getAllTasks);
-
-/**
- * @swagger
- * /api/stats:
- *   get:
- *     summary: Get task statistics
- *     description: Retrieve statistics about total, completed, and pending tasks
- *     tags: [Statistics]
- *     responses:
- *       200:
- *         description: Statistics retrieved successfully
+ *       401:
+ *         description: Not authenticated
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/TaskStats'
- *                 message:
- *                   type: string
- *                   example: "Statistics retrieved successfully"
- *             example:
- *               success: true
- *               data:
- *                 totalTasks: 10
- *                 completedTasks: 6
- *                 pendingTasks: 4
- *               message: "Statistics retrieved successfully"
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/stats", getTaskStats);
+router.get("/", protect, getAllTasks);
 
 /**
  * @swagger
  * /api/tasks/{id}:
  *   get:
  *     summary: Get a task by ID
- *     description: Retrieve a single task by its UUID
+ *     description: Retrieve a single task by its MongoDB ObjectId (must be owned by authenticated user)
  *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: UUID of the task
- *         example: "123e4567-e89b-12d3-a456-426614174000"
+ *         description: MongoDB ObjectId of the task
+ *         example: "507f1f77bcf86cd799439011"
  *     responses:
  *       200:
  *         description: Task retrieved successfully
@@ -180,33 +169,36 @@ router.get("/stats", getTaskStats);
  *                 message:
  *                   type: string
  *                   example: "Task retrieved successfully"
- *             example:
- *               success: true
- *               data:
- *                 id: "123e4567-e89b-12d3-a456-426614174000"
- *                 title: "Learn Express"
- *                 completed: false
- *               message: "Task retrieved successfully"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Not authorized to access this task
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Task not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               success: false
- *               data: null
- *               message: "Task not found"
  */
-router.get("/:id", getTaskById);
+router.get("/:id", protect, getTaskById);
 
 /**
  * @swagger
  * /api/tasks:
  *   post:
  *     summary: Create a new task
- *     description: Add a new task to the list
+ *     description: Add a new task for the authenticated user
  *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -224,12 +216,6 @@ router.get("/:id", getTaskById);
  *                 type: boolean
  *                 description: Task completion status (optional, defaults to false)
  *                 example: false
- *           examples:
- *             newTask:
- *               summary: Create a new task
- *               value:
- *                 title: "Learn Swagger"
- *                 completed: false
  *     responses:
  *       201:
  *         description: Task created successfully
@@ -246,41 +232,38 @@ router.get("/:id", getTaskById);
  *                 message:
  *                   type: string
  *                   example: "Task created successfully"
- *             example:
- *               success: true
- *               data:
- *                 id: "456e7890-e12b-12d3-a456-426614174002"
- *                 title: "Learn Swagger"
- *                 completed: false
- *               message: "Task created successfully"
  *       400:
  *         description: Validation error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               success: false
- *               data: null
- *               message: "Title is required"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post("/", validateTask, createTask);
+router.post("/", protect, validateCreateTask, createTask);
 
 /**
  * @swagger
  * /api/tasks/{id}:
  *   put:
  *     summary: Update a task
- *     description: Update an existing task by ID
+ *     description: Update an existing task by ID (must be owned by authenticated user)
  *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: UUID of the task
- *         example: "123e4567-e89b-12d3-a456-426614174000"
+ *         description: MongoDB ObjectId of the task
+ *         example: "507f1f77bcf86cd799439011"
  *     requestBody:
  *       required: true
  *       content:
@@ -296,20 +279,6 @@ router.post("/", validateTask, createTask);
  *                 type: boolean
  *                 description: Updated completion status
  *                 example: true
- *           examples:
- *             updateTitle:
- *               summary: Update task title
- *               value:
- *                 title: "Learn Express.js Advanced"
- *             updateCompleted:
- *               summary: Mark task as completed
- *               value:
- *                 completed: true
- *             updateBoth:
- *               summary: Update both fields
- *               value:
- *                 title: "Master Express.js"
- *                 completed: true
  *     responses:
  *       200:
  *         description: Task updated successfully
@@ -326,15 +295,20 @@ router.post("/", validateTask, createTask);
  *                 message:
  *                   type: string
  *                   example: "Task updated successfully"
- *             example:
- *               success: true
- *               data:
- *                 id: "123e4567-e89b-12d3-a456-426614174000"
- *                 title: "Learn Express.js Advanced"
- *                 completed: true
- *               message: "Task updated successfully"
  *       400:
  *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Not authorized to update this task
  *         content:
  *           application/json:
  *             schema:
@@ -345,28 +319,26 @@ router.post("/", validateTask, createTask);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               success: false
- *               data: null
- *               message: "Task not found"
  */
-router.put("/:id", validateTaskUpdate, updateTask);
+router.put("/:id", protect, validateUpdateTask, updateTask);
 
 /**
  * @swagger
  * /api/tasks/{id}:
  *   delete:
  *     summary: Delete a task
- *     description: Remove a task from the list by ID
+ *     description: Remove a task by ID (must be owned by authenticated user)
  *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: UUID of the task to delete
- *         example: "123e4567-e89b-12d3-a456-426614174000"
+ *         description: MongoDB ObjectId of the task to delete
+ *         example: "507f1f77bcf86cd799439011"
  *     responses:
  *       200:
  *         description: Task deleted successfully
@@ -383,24 +355,25 @@ router.put("/:id", validateTaskUpdate, updateTask);
  *                 message:
  *                   type: string
  *                   example: "Task deleted successfully"
- *             example:
- *               success: true
- *               data:
- *                 id: "123e4567-e89b-12d3-a456-426614174000"
- *                 title: "Learn Express"
- *                 completed: false
- *               message: "Task deleted successfully"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Not authorized to delete this task
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Task not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               success: false
- *               data: null
- *               message: "Task not found"
  */
-router.delete("/:id", deleteTask);
+router.delete("/:id", protect, deleteTask);
 
 module.exports = router;
