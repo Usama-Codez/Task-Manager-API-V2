@@ -534,7 +534,7 @@ This project is licensed under the ISC License.
 **Your Name**
 
 - GitHub: [@usama-codez](https://github.com/usama-codez)
-- Email: your.email@example.com
+- Email: usamaakram442@gmail.com
 
 ---
 
