@@ -10,9 +10,6 @@ const errorHandler = require("./middlewares/errorHandler");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Connect to MongoDB
-connectDB();
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -126,6 +123,9 @@ app.use(errorHandler);
 // ➤ IMPORTANT: Do NOT listen in production (Vercel handles this)
 //    Only start server when running locally
 if (process.env.NODE_ENV !== "production") {
+  // Connect to MongoDB for local development
+  connectDB();
+  
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📚 Swagger Docs → http://localhost:${PORT}/api-docs`);
