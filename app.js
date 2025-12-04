@@ -125,7 +125,7 @@ app.use(errorHandler);
 if (process.env.NODE_ENV !== "production") {
   // Connect to MongoDB for local development
   connectDB();
-  
+
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📚 Swagger Docs → http://localhost:${PORT}/api-docs`);
