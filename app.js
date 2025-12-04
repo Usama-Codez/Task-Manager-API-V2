@@ -112,7 +112,9 @@ app.use("/api", statsRoutes); // /api/stats
 app.get("/debug-env", (req, res) => {
   res.json({
     mongoUriDefined: !!process.env.MONGODB_URI,
-    mongoUriPrefix: process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 20) : "undefined",
+    mongoUriPrefix: process.env.MONGODB_URI
+      ? process.env.MONGODB_URI.substring(0, 20)
+      : "undefined",
     nodeEnv: process.env.NODE_ENV,
   });
 });

@@ -2,7 +2,9 @@
 
 A production-ready RESTful API for managing tasks with **MongoDB** database, **JWT authentication**, **express-validator** for input validation, and comprehensive **Swagger documentation**. Built with Node.js and Express.js.
 
-🌐 **[Live Demo](#)** | 📚 **[API Documentation](#)**
+🌐 **[Live Demo](https://task-manager-api-v2-swart.vercel.app/)** | 📚 **[API Documentation](https://task-manager-api-v2-swart.vercel.app/api-docs)**
+
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/usama-codez/Task-Manager-API-V2)
 
 ---
 
@@ -73,8 +75,8 @@ A production-ready RESTful API for managing tasks with **MongoDB** database, **J
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/task-manager-api-v2.git
-   cd task-manager-api-v2
+   git clone https://github.com/usama-codez/Task-Manager-API-V2.git
+   cd Task-Manager-API-V2
    ```
 
 2. **Install dependencies**
@@ -531,7 +533,7 @@ This project is licensed under the ISC License.
 
 **Your Name**
 
-- GitHub: [@yourusername](https://github.com/yourusername)
+- GitHub: [@usama-codez](https://github.com/usama-codez)
 - Email: your.email@example.com
 
 ---
